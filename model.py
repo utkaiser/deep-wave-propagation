@@ -5,8 +5,8 @@ import torch
 import torch.nn.functional as F
 from torch import nn, save
 
-from utils_use_numerical_solver import velocity_verlet_tensor
-from wave_component_function import WaveEnergyComponentField_tensor,WaveSol_from_EnergyComponent_tensor
+from numerical_solvers import velocity_verlet_tensor
+from utils_wave_component_function import WaveEnergyComponentField_tensor,WaveSol_from_EnergyComponent_tensor
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -30,34 +30,6 @@ def save_model(model, model_name, dir_path="results/"):
         return save(model.state_dict(), saving_path)
     else:
         raise MemoryError("File (.pt) already exists.")
-
-
-def get_params():
-    """
-    Parameters
-    ----------
-
-    Returns
-    -------
-    (dictionary) get numerical and training parameters
-    """
-
-    d = {
-        "n_epochs": 20,
-        "n_snaps": 8,
-        "boundary_c": "absorbing",
-        "delta_t_star": 0.06,
-        "f_delta_x": 2.0 / 128.0,
-        "f_delta_t": (2.0 / 128.0) / 20.0,
-        "c_delta_x": 2.0 / 64.0,
-        "c_delta_t": 1.0 / 600.0,
-        "optimizer_name": "AdamW",
-        "loss_function_name": "MSE",
-        "res_scaler": 2,
-    }
-
-    return d
-
 
 
 def fetch_data_end_to_end(data_paths, batch_size, additional_test_paths):

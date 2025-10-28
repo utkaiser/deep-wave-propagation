@@ -1,10 +1,10 @@
 import torch
 from matplotlib import pyplot as plt
 
-from utils_generating_data import one_iteration_pseudo_spectral_tensor
-from utils_training_model import Model_end_to_end
-from utils_use_numerical_solver import WaveEnergyField_tensor
-from wave_component_function import WaveSol_from_EnergyComponent_tensor
+from generate_data import one_iteration_pseudo_spectral_tensor
+from model import Model_end_to_end
+from numerical_solvers import WaveEnergyField_tensor
+from utils_wave_component_function import WaveSol_from_EnergyComponent_tensor
 
 
 def get_model(

@@ -5,3 +5,4 @@ results
 *.pyc
 .ipynb_checkpoints/
 .vscode/
+znotes.txt
