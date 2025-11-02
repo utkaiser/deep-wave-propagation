@@ -2,8 +2,9 @@ import numpy as np
 import scipy.ndimage
 import torch
 from skimage.transform import resize
+import matplotlib.pyplot as plt
 
-from numerical_solvers import init_pulse_gaussian, pseudo_spectral_tensor
+from numerical_solvers import pseudo_spectral_tensor
 from utils_wave_component_function import WaveEnergyComponentField_tensor, WaveSol_from_EnergyComponent_tensor
 
 
@@ -137,3 +138,110 @@ def one_iteration_pseudo_spectral_tensor(
         u_prop, u_t_prop, vel.unsqueeze(dim=1), f_delta_x
     )
     return torch.stack([u_x, u_y, u_t_c], dim=1), u_prop
+
+
+def get_velocity_model(data_path, visualize=True):
+    """
+    Parameters
+    ----------
+    data_path : (string) path to velocity profile crops
+    visualize : (boolean) whether to visualize data
+
+    Returns
+    -------
+    (numpy array) single velocity profile
+    """
+
+    # choose first velocity profile out of list of velocity crops
+    vel = np.load(data_path)["wavespeedlist"].squeeze()[0]
+
+    if visualize:
+        plt.axis("off")
+        plt.title("Velocity profile")
+        plt.imshow(vel)
+        plt.show()
+
+    return vel
+
+
+def init_pulse_gaussian(width, res_padded, center_x, center_y):
+    """
+
+    Parameters
+    ----------
+    width : (float) width of initial pulse
+    res_padded : (int) padded resolution
+    center_x : (float) center of initial pulse in x_1 direction
+    center_y : (float) center of initial pulse in x_2 direction
+
+    Returns
+    -------
+    generates initial Gaussian pulse  (see formula in paper)
+    """
+
+    xx, yy = np.meshgrid(np.linspace(-1, 1, res_padded), np.linspace(-1, 1, res_padded))
+    u0 = np.exp(-width * ((xx - center_x) ** 2 + (yy - center_y) ** 2))
+    ut0 = np.zeros([np.size(xx, axis=1), np.size(yy, axis=0)])
+    return u0, ut0
+
+
+def fetch_data_end_to_end(data_paths, batch_size, additional_test_paths):
+    """
+    Parameters
+    ----------
+    data_paths : (string) data paths to use for training and validation
+    batch_size : (int) batch size
+    additional_test_paths : (string) data paths to use for testing
+
+    Returns
+    -------
+    return torch.Dataloader object to iterate over training, validation and testing samples
+    """
+
+    def get_datasets(data_paths):
+        # concatenate paths
+        datasets = []
+        for i, path in enumerate(data_paths):
+            np_array = np.load(path)  # 200 x 11 x 128 x 128
+            datasets.append(
+                torch.utils.data.TensorDataset(
+                    torch.stack(
+                        (
+                            torch.from_numpy(np_array["Ux"]),
+                            torch.from_numpy(np_array["Uy"]),
+                            torch.from_numpy(np_array["Utc"]),
+                            torch.from_numpy(np_array["vel"]),
+                            torch.from_numpy(np_array["u_phys"])
+                        ),
+                        dim=2,
+                    )
+                )
+            )
+        return torch.utils.data.ConcatDataset(datasets)
+
+    # get full dataset
+    full_dataset = get_datasets(data_paths)
+
+    # get split sizes
+    train_size = int(0.8 * len(full_dataset))
+    val_or_test_size = int(0.1 * len(full_dataset))
+
+    # split dataset randomly and append special validation/ test data
+    train_dataset, val_dataset, test_dataset = torch.utils.data.random_split(
+        full_dataset, [train_size, val_or_test_size, val_or_test_size]
+    )
+    val_datasets = val_dataset  # + get_datasets(additional_test_paths)
+    test_datasets = test_dataset + get_datasets(additional_test_paths)
+
+    # get dataloader objects
+    train_loader = torch.utils.data.DataLoader(
+        train_dataset, batch_size=batch_size, shuffle=True, num_workers=8, pin_memory=True
+    )
+    val_loader = torch.utils.data.DataLoader(
+        val_datasets, batch_size=batch_size, shuffle=True, num_workers=8, pin_memory=True
+    )
+    test_loader = torch.utils.data.DataLoader(
+        test_datasets, batch_size=batch_size, shuffle=True, num_workers=8, pin_memory=True
+    )
+
+    return train_loader, val_loader, test_loader

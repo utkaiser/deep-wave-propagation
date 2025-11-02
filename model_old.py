@@ -28,7 +28,6 @@ class Model_end_to_end(nn.Module):
         """
 
         super().__init__()
-
         self.downsampling_type = "Interpolation"
         self.upsampling_type = upsampling_type
         self.param_dict = param_dict
@@ -65,7 +64,14 @@ class Model_end_to_end(nn.Module):
         """
 
         # restriction component
-        downsampling_res, _ = self.model_downsampling(x)
+        if self.downsampling_type == "CNN":
+            downsampling_res, skip = self.model_downsampling(
+                x
+            )
+        else:
+            downsampling_res, _ = self.model_downsampling(
+                x
+            )
 
         # velocity verlet
         prop_result = self.model_numerical(downsampling_res, u_elapse)
@@ -318,12 +324,12 @@ class UNetConvBlock(nn.Module):
             )
         elif acti_func == "relu":
             block.append(
-                nn.Conv2d(in_size, out_size, kernel_size=3, bias=False, padding=1)
+                nn.Conv2d(in_size, out_size, kernel_size=3, bias=True, padding=1)
             )
             block.append(nn.BatchNorm2d(out_size))
             block.append(nn.ReLU())
             block.append(
-                nn.Conv2d(out_size, out_size, kernel_size=3, bias=False, padding=1)
+                nn.Conv2d(out_size, out_size, kernel_size=3, bias=True, padding=1)
             )
             block.append(nn.BatchNorm2d(out_size))
             block.append(nn.ReLU())

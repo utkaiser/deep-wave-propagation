@@ -6,3 +6,8 @@ results
 .ipynb_checkpoints/
 .vscode/
 znotes.txt
+__pycache__/
+*.out
+numerical_solvers_old.py
+model_transformer_old.py
+outs

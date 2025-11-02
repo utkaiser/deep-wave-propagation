@@ -2,8 +2,8 @@ import torch
 from matplotlib import pyplot as plt
 
 from generate_data import one_iteration_pseudo_spectral_tensor
+from utils_wave_component_function import WaveEnergyField_tensor
 from model import Model_end_to_end
-from numerical_solvers import WaveEnergyField_tensor
 from utils_wave_component_function import WaveSol_from_EnergyComponent_tensor
 
 
@@ -28,9 +28,7 @@ def get_model(
     """
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = Model_end_to_end(
-        param_dict, down_sampling_component, up_sampling_component,
-    ).double()
+    model = Model_end_to_end(param_dict, down_sampling_component, up_sampling_component)
     model = torch.nn.DataParallel(model).to(device)  # multi-GPU use
     model.load_state_dict(torch.load(model_path))
 

@@ -146,3 +146,30 @@ def WaveEnergyField(u, ut, c, dx):
     )
 
     return w
+
+
+def WaveEnergyField_tensor(u, ut, c, dx):
+    """
+    Parameters
+    ----------
+    u : (pytorch tensor) physical wave component, displacement of wave
+    ut : (pytorch tensor) physical wave component derived by t, velocity of wave
+    c : (pytorch tensor) velocity profile dependent on x_1 and x_2
+    dx : (flaot) time step in both dimensions / grid spacing
+
+    Returns
+    -------
+    transformation to energy-semi norm of wave given parameters c and dx (tensor)
+    """
+
+    ux, uy = torch.gradient(u, spacing=dx)
+    absux = torch.abs(ux)
+    absuy = torch.abs(uy)
+    absutc = torch.divide(torch.abs(ut), c)
+    w = (
+        torch.multiply(absux, absux)
+        + torch.multiply(absuy, absuy)
+        + torch.multiply(absutc, absutc)
+    )
+
+    return w
